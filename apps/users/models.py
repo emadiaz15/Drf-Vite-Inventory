@@ -2,12 +2,11 @@ from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 from simple_history.models import HistoricalRecords
 
-
 class UserManager(BaseUserManager):
     def _create_user(self, username, email, name, last_name, password, is_staff, is_superuser, **extra_fields):
         if not username:
             raise ValueError("The Username field must be set")
-        if email and not email:
+        if not email:
             raise ValueError("The Email field must be set")
 
         email = self.normalize_email(email)
@@ -41,14 +40,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     historical = HistoricalRecords()
+
     objects = UserManager()
+
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['email', 'name', 'last_name']
 
     class Meta:
         verbose_name = 'User'
         verbose_name_plural = 'Users'
-
-    USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['email', 'name', 'last_name']
 
     def __str__(self):
         return f'{self.name} {self.last_name}'

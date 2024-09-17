@@ -1,8 +1,12 @@
+import qrcode
+from io import BytesIO
+from django.core.files import File
 from django.db import models
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+# Category model remains the same as before
 class Category(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(null=True, blank=True)
@@ -15,10 +19,7 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
-    # Manager para filtrar categorías no eliminadas
-    objects = models.Manager()  # Manager por defecto
-    active_objects = models.Manager.from_queryset(Category.objects.filter(deleted_at__isnull=True))  # Manager custom
-
+# Type model remains the same as before
 class Type(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(null=True, blank=True)
@@ -31,31 +32,58 @@ class Type(models.Model):
     def __str__(self):
         return self.name
 
-    # Manager para filtrar tipos no eliminados
-    objects = models.Manager()
-    active_objects = models.Manager.from_queryset(Type.objects.filter(deleted_at__isnull=True))
-
 class Product(models.Model):
     name = models.CharField(max_length=100)
-    code = models.IntegerField(null=False, default=0, unique=True)  # Hacer que el código sea único
+    code = models.IntegerField(null=False, default=0, unique=True)  # Código único
     type = models.ForeignKey(Type, on_delete=models.SET_NULL, related_name='products', null=True)
     description = models.TextField(null=True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, related_name='products', null=True)
-    brand = models.CharField(max_length=200)  # marca
+    brand = models.CharField(max_length=200)  # Marca
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='products', null=True)
-    metadata = models.JSONField(default=dict, blank=True, null=True)  # Campo JSON para datos adicionales
-    image = models.ImageField(upload_to='products/', null=True, blank=True)  # Nuevo campo para la imagen del producto
+    metadata = models.JSONField(default=dict, blank=True, null=True)  # Datos adicionales (JSON)
+    image = models.ImageField(upload_to='products/', null=True, blank=True)  # Imagen del producto
+
+    # Campo nuevo para almacenar el código QR generado
+    qr_code = models.ImageField(upload_to='qr_codes/', null=True, blank=True)
 
     def __str__(self):
         return self.name
 
-    # Manager para filtrar productos no eliminados
-    objects = models.Manager()
-    active_objects = models.Manager.from_queryset(Product.objects.filter(deleted_at__isnull=True))
+    # Lógica para generar el código QR
+    def save(self, *args, **kwargs):
+        # Generar código QR si no existe ya
+        if not self.qr_code:
+            self.generate_qr_code()
+        super().save(*args, **kwargs)
 
+    def generate_qr_code(self):
+        """
+        Genera un código QR basado en el nombre y el código del producto.
+        """
+        qr_content = f'{self.name} - {self.code}'  # Puedes cambiar esto a una URL u otro contenido
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(qr_content)
+        qr.make(fit=True)
+
+        # Guardar la imagen del código QR en memoria
+        img = qr.make_image(fill='black', back_color='white')
+        buffer = BytesIO()
+        img.save(buffer)
+        buffer.seek(0)
+
+        # Guardar la imagen en el campo `qr_code`
+        file_name = f'qr_code_{self.code}.png'
+        self.qr_code.save(file_name, File(buffer), save=False)
+
+    # Método existente para añadir metadata adicional
     def add_wire_metadata(self, number_coil, initial_length, total_weight):
         if not isinstance(number_coil, str):
             raise ValueError("number_coil debe ser una cadena de texto.")
@@ -71,27 +99,8 @@ class Product(models.Model):
         })
         self.save()
 
-class Comment(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='comments')
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='comments', null=True)
-    text = models.TextField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    modified_at = models.DateTimeField(auto_now=True)
-    deleted_at = models.DateTimeField(null=True, blank=True)
-
-    def __str__(self):
-        return f'Comment by {self.user.username} for {self.product.name}'
-
-    # Manager para filtrar comentarios no eliminados
-    objects = models.Manager()
-    active_objects = models.Manager.from_queryset(Comment.objects.filter(deleted_at__isnull=True))
-
-class Stock(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='inventory')
-    quantity = models.DecimalField(max_digits=15, decimal_places=2)
-    date = models.DateTimeField(auto_now=True)
-    modified_at = models.DateTimeField(auto_now=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f'Inventory for {self.product.name} on {self.date}'
+    @property
+    def latest_stock(self):
+        """Devuelve el último registro de stock para el producto."""
+        from apps.stocks.models import Stock  # Importa el modelo Stock de la app 'stocks'
+        return Stock.objects.filter(product=self).order_by('-date').first()

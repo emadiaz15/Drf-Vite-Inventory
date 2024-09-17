@@ -20,11 +20,16 @@ THIRD_APPS = [
     'simple_history',
     'rest_framework_simplejwt',
     'drf_spectacular',
+    'celery',
 ]
 
 LOCAL_APPS = [
     'apps.products',
     'apps.users',
+    'apps.core',
+    'apps.cuts',
+    'apps.stocks',
+    'apps.comments'
 ]
 
 INSTALLED_APPS = BASE_APPS + THIRD_APPS + LOCAL_APPS
