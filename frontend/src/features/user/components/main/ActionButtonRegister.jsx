@@ -25,7 +25,7 @@ const ActionButtonRegister = () => {
         className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-300"
         type="button"
       >
-        Agregar Usuario
+        Nuevo Usuario
       </button>
 
       {isModalOpen && (

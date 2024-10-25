@@ -1,4 +1,4 @@
-import api from '../../../services/api'; // Usa la instancia de Axios configurada
+import api from '../../../../services/api'; // Usa la instancia de Axios configurada
 
 // Método para listar todos los productos
 export const listProducts = async () => {

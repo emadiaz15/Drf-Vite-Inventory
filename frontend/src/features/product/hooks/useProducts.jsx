@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { listProducts } from '../services/listProducts';
+import { listProducts } from '../services/products/listProducts';
 import { useAuth } from '../../../hooks/useAuth';
 
 export const useProducts = () => {
