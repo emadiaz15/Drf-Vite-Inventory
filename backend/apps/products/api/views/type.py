@@ -24,7 +24,7 @@ from drf_spectacular.utils import extend_schema
 )
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
-def type_list_create(request):
+def type_list(request):
     """
     Endpoint para listar tipos o crear un nuevo tipo.
     """

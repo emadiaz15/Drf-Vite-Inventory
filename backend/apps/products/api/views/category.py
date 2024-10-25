@@ -24,7 +24,7 @@ from drf_spectacular.utils import extend_schema
 )
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
-def category_list_create(request):
+def category_list(request):
     """
     Endpoint para obtener una lista de categorías o crear una nueva categoría.
     """
