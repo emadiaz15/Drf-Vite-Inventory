@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import UserRegisterModal from './UserRegisterModal'; // Importa el modal
+import UserRegisterModal from '../register/UserRegisterModal'; // Importa el modal
 
-const ActionButtonDropdown = () => {
+const ActionButtonRegister = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleAddUser = () => {
@@ -38,4 +38,4 @@ const ActionButtonDropdown = () => {
   );
 };
 
-export default ActionButtonDropdown;
+export default ActionButtonRegister;

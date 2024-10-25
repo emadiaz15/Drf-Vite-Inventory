@@ -6,16 +6,7 @@ from django.shortcuts import get_object_or_404
 from apps.users.models import User
 from ..serializers import UserSerializer
 from drf_spectacular.utils import extend_schema
-from rest_framework.pagination import PageNumberPagination
-
-class CustomPagination(PageNumberPagination):
-    """
-    Custom pagination for user lists.
-    """
-    page_size = 10
-    page_size_query_param = 'page_size'
-    max_page_size = 100
-
+from ...pagination import CustomPagination
 
 @extend_schema(
     operation_id="get_user_profile",
@@ -35,7 +26,6 @@ def profile_view(request):
     serializer = UserSerializer(user)
     return Response(serializer.data)
 
-
 @extend_schema(
     operation_id="list_users",
     description="Retrieve a list of all users. Only accessible by admin users.",
@@ -47,12 +37,15 @@ def profile_view(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, IsAdminUser])  # Only admins can access
 def user_list_view(request):
+    """
+    Endpoint to retrieve a list of users with pagination, showing the newest users first.
+    """
     paginator = CustomPagination()
-    users = User.objects.all()
+    # Verificar si la consulta devuelve correctamente los usuarios más nuevos primero
+    users = User.objects.all().order_by('-created_at')  # Orden explícito por fecha de creación descendente
     result_page = paginator.paginate_queryset(users, request)
     serializer = UserSerializer(result_page, many=True)
     return paginator.get_paginated_response(serializer.data)
-
 
 @extend_schema(
     operation_id="create_user",
@@ -75,7 +68,6 @@ def user_create_view(request):
         serializer.save()
         return Response({'message': 'User created successfully'}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 @extend_schema(
     operation_id="manage_user",

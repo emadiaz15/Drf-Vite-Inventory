@@ -1,7 +1,7 @@
 // Parent component where the modal is used
 import React, { useState } from 'react';
 import UserRegisterModal from './UserRegisterModal';
-import { fetchUsers } from '../services/listUsers'; // Función para recargar la lista
+import { fetchUsers } from '../../services/listUsers'; // Función para recargar la lista
 
 const ParentComponent = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);

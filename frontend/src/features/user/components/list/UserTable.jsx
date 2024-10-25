@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import UserEditModal from './UserEditModal';  // Importamos el componente modal
+import UserEditModal from '../edit/UserEditModal';  // Importamos el componente modal
 
 const UserTable = ({ users }) => {
   const [selectedUser, setSelectedUser] = useState(null);

@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 from simple_history.models import HistoricalRecords
+from django.utils import timezone
 
 class UserManager(BaseUserManager):
     def _create_user(self, username, email, name, last_name, password, is_staff, is_superuser, **extra_fields):
@@ -40,6 +41,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     historical = HistoricalRecords()
+    created_at = models.DateTimeField(auto_now_add=True)  # Cambiado para permitir valor por defecto temporalmente
 
     objects = UserManager()
 

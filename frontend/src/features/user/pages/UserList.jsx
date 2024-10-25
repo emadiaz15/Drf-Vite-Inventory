@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { listUsers } from '../services/listUsers'; 
 import Navbar from '../../../components/common/Navbar';
 import Sidebar from '../../../components/common/Sidebar';
 import Footer from '../../../components/common/Footer';
-import { useAuth } from '../../../hooks/useAuth';
-import ActionButtonDropdown from '../components/ActionButtonDropdown';
+import ActionButtonDropdown from '../components/main/ActionButtonRegister';
 import SearchInput from '../../../components/common/SearchInput';
-import UserTable from '../components/UserTable';
-import Pagination from '../components/Pagination';
+import UserTable from '../components/list/UserTable';
+import Pagination from '../components/list/Pagination';
+import SuccessPrompt from '../components/register/SuccessPrompt'; // Importar el componente de mensaje de éxito
+import UserRegisterModal from '../components/register/UserRegisterModal'; // Importar el modal de registro
+import { listUsers } from '../services/listUsers'; 
+import { useAuth } from '../../../hooks/useAuth';
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
@@ -16,8 +18,11 @@ const UserList = () => {
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [nextPage, setNextPage] = useState(null); // URL para la siguiente página
-  const [previousPage, setPreviousPage] = useState(null); // URL para la página anterior
+  const [nextPage, setNextPage] = useState(null);
+  const [previousPage, setPreviousPage] = useState(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
   const navigate = useNavigate();
   const { isAuthenticated, loading } = useAuth();
 
@@ -25,12 +30,12 @@ const UserList = () => {
   const fetchUsers = async (url = '/users/list/') => {
     setLoadingUsers(true);
     try {
-      const data = await listUsers(url); // Llamar a la API con la URL correcta
+      const data = await listUsers(url);
       if (data && Array.isArray(data.results)) {
-        setUsers(data.results); // Almacenar los usuarios
-        setNextPage(data.next); // Guardar la URL de la siguiente página
-        setPreviousPage(data.previous); // Guardar la URL de la página anterior
-        setTotalPages(Math.ceil(data.count / 10)); // Suponiendo que tienes 10 usuarios por página
+        setUsers(data.results); // Los resultados estarán ordenados desde el servicio
+        setNextPage(data.next);
+        setPreviousPage(data.previous);
+        setTotalPages(Math.ceil(data.count / 10));
       } else {
         setError(new Error('Error en el formato de los datos de la API'));
       }
@@ -45,46 +50,53 @@ const UserList = () => {
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) {
-        navigate('/'); // Redirigir al Home si no está autenticado
+        navigate('/');
         return;
       }
-      fetchUsers(); // Cargar usuarios de la primera página
+      fetchUsers();
     }
   }, [isAuthenticated, loading, navigate]);
 
-  // Función para manejar el cambio de página
   const handlePageChange = (page) => {
     if (page === 'next' && nextPage) {
-      fetchUsers(nextPage); // Cargar la siguiente página
+      fetchUsers(nextPage);
       setCurrentPage((prev) => prev + 1);
     } else if (page === 'previous' && previousPage) {
-      fetchUsers(previousPage); // Cargar la página anterior
+      fetchUsers(previousPage);
       setCurrentPage((prev) => prev - 1);
     }
   };
 
-  if (loading || loadingUsers) return <p>Cargando...</p>; // Mostrar mensaje mientras carga la autenticación o los usuarios
+  const handleShowSuccess = (message) => {
+    setSuccessMessage(message);
+    setShowSuccess(true);
+    fetchUsers(); // Actualizar la lista de usuarios después de crear uno nuevo
+    setTimeout(() => setShowSuccess(false), 3000);
+  };
+
+  const handleUserRegistration = () => {
+    handleShowSuccess("¡Usuario registrado con éxito!");
+    setShowRegisterModal(false);
+  };
+
+  if (loading || loadingUsers) return <p>Cargando...</p>;
   if (error) return <p>Error cargando usuarios: {error.message}</p>;
 
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      
       <div className="flex flex-1 overflow-hidden">
         <div className="w-64">
           <Sidebar />
         </div>
-
         <div className="flex-1 flex flex-col p-2 mt-14">
           <div className="flex justify-between items-center py-4">
-            <ActionButtonDropdown />
+            <ActionButtonDropdown onRegister={() => setShowRegisterModal(true)} />
             <SearchInput placeholder="Buscar usuarios" onSearch={(query) => console.log(query)} />
           </div>
-
           <div className="relative overflow-x-auto shadow-md sm:rounded-lg flex-1">
             <UserTable users={users} />
           </div>
-
           <Pagination
             totalPages={totalPages}
             currentPage={currentPage}
@@ -92,8 +104,14 @@ const UserList = () => {
           />
         </div>
       </div>
-
       <Footer />
+      {showSuccess && <SuccessPrompt message={successMessage} />}
+      {showRegisterModal && (
+        <UserRegisterModal 
+          onClose={() => setShowRegisterModal(false)} 
+          onSave={handleUserRegistration} 
+        />
+      )}
     </div>
   );
 };

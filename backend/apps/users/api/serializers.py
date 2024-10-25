@@ -7,7 +7,7 @@ class UserSerializer(serializers.ModelSerializer):
     Serializador para el modelo User.
     Maneja la conversión de los datos del modelo User a formato JSON y viceversa.
     """
-    password = serializers.CharField(write_only=True, required=False, min_length=8)  # Cambiado a opcional para actualizar
+    password = serializers.CharField(write_only=True, required=False, min_length=4)  # Cambiado a opcional para actualizar
     image = serializers.ImageField(required=False, allow_null=True)  # Hacer opcional el campo de imagen
 
     class Meta:
@@ -47,8 +47,8 @@ class UserSerializer(serializers.ModelSerializer):
         """
         Validación adicional para la contraseña.
         """
-        if len(value) < 8:
-            raise serializers.ValidationError("La contraseña debe tener al menos 8 caracteres.")
+        if len(value) < 4:
+            raise serializers.ValidationError("La contraseña debe tener al menos 4 caracteres.")
         return value
 
     def validate_email(self, value):

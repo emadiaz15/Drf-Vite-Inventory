@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import PasswordResetModal from './PasswordResetModal';  // Importa el nuevo modal
+import PasswordResetModal from '../main/PasswordResetModal';  // Importa el nuevo modal
 
 const UserEditModal = ({ user, onClose, onSave }) => {
   const [formData, setFormData] = useState({
