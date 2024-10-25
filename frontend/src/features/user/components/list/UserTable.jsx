@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
 import UserEditModal from '../edit/UserEditModal';  // Importamos el componente modal
+import PasswordResetModal from '../edit/PasswordResetModal'; // Importa el nuevo modal
+import { updateUser } from '../../services/updateUser'; // Servicio para actualizar usuarios
+import { deleteUser } from '../../services/deleteUser'; // Servicio para eliminar usuarios
 
-const UserTable = ({ users }) => {
+const UserTable = ({ users, onUsersChange, handleShowSuccess }) => {
   const [selectedUser, setSelectedUser] = useState(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [userToResetPassword, setUserToResetPassword] = useState(null);
 
   // Función para manejar la acción de editar
   const handleEdit = (user) => {
@@ -10,21 +15,60 @@ const UserTable = ({ users }) => {
   };
 
   // Función para manejar la acción de eliminar
-  const handleDelete = (userId) => {
-    console.log(`Deleting user with ID: ${userId}`);
-    // Aquí agregarías la lógica para eliminar el usuario
+  const handleDelete = async (userId) => {
+    if (window.confirm("¿Estás seguro de que deseas eliminar este usuario?")) {
+      try {
+        await deleteUser(userId); // Llamar al servicio para eliminar el usuario
+        handleShowSuccess('Usuario eliminado con éxito');
+        onUsersChange(); // Actualizar la lista de usuarios después de la eliminación
+      } catch (error) {
+        console.error('Error al eliminar el usuario:', error.message);
+        alert('Error al eliminar el usuario. Por favor, inténtelo de nuevo.');
+      }
+    }
   };
 
-  // Cerrar el modal
+  // Cerrar el modal de edición
   const closeModal = () => {
     setSelectedUser(null);  // Limpiar el usuario seleccionado y cerrar el modal
   };
 
   // Guardar cambios en el usuario
-  const handleSave = (userId, updatedUserData) => {
-    console.log(`Saving user with ID: ${userId}`, updatedUserData);
-    // Aquí agregarías la lógica para guardar los cambios en el usuario
-    closeModal();  // Cerrar el modal después de guardar
+  const handleSave = async (userId, updatedUserData) => {
+    try {
+      await updateUser(userId, updatedUserData); // Llamar al servicio para actualizar el usuario
+      handleShowSuccess('Usuario actualizado con éxito');
+      onUsersChange(); // Actualizar la lista de usuarios después de la edición
+      closeModal();  // Cerrar el modal después de guardar
+    } catch (error) {
+      console.error('Error al actualizar el usuario:', error.message);
+      alert('Error al actualizar el usuario. Verifique los datos e inténtelo de nuevo.');
+    }
+  };
+
+  // Abrir el modal de restablecimiento de contraseña
+  const openPasswordResetModal = (user) => {
+    setUserToResetPassword(user);
+    setShowPasswordModal(true);
+  };
+
+  // Cerrar el modal de restablecimiento de contraseña
+  const closePasswordResetModal = () => {
+    setUserToResetPassword(null);
+    setShowPasswordModal(false);
+  };
+
+  // Manejar el restablecimiento de contraseña
+  const handleSaveNewPassword = async (userId, newPassword) => {
+    try {
+      // Aquí deberías implementar la lógica para actualizar la contraseña en el backend
+      console.log(`Restableciendo contraseña para el usuario ID ${userId}: ${newPassword}`);
+      closePasswordResetModal();
+      handleShowSuccess('Contraseña cambiada exitosamente');
+    } catch (error) {
+      console.error('Error al cambiar la contraseña:', error.message);
+      alert('Error al cambiar la contraseña. Por favor, inténtelo de nuevo.');
+    }
   };
 
   return (
@@ -90,6 +134,16 @@ const UserTable = ({ users }) => {
           user={selectedUser} 
           onClose={closeModal} 
           onSave={handleSave} 
+          onPasswordReset={openPasswordResetModal}
+        />
+      )}
+
+      {/* Mostrar el modal de restablecimiento de contraseña */}
+      {showPasswordModal && userToResetPassword && (
+        <PasswordResetModal
+          userId={userToResetPassword.id}
+          onClose={closePasswordResetModal}
+          onSave={handleSaveNewPassword}
         />
       )}
     </>

@@ -93,7 +93,7 @@ def user_detail_api_view(request, pk=None):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     elif request.method == 'PUT':
-        serializer = UserSerializer(user, data=request.data, partial=True)
+        serializer = UserSerializer(user, data=request.data, partial=True)  # Permitir actualización parcial
         if serializer.is_valid():
             serializer.save()
             return Response({

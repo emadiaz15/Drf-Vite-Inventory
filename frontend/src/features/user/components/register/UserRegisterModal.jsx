@@ -1,14 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import useUserForm from '../../hooks/useUserForm';
-import FormInput from './FormInput';
-import FormCheckbox from './FormCheckbox';
+import FormInput from '../main/FormInput';
+import FormCheckbox from '../main/FormCheckbox';
 import ActionButtons from './ActionButtons';
+import SuccessMessage from '../../../../components/common/SuccessMessage'; // Importa el componente de mensaje de éxito
 
 const UserRegisterModal = ({ onClose, onSave }) => {
-  const { formData, handleChange, handleSubmit, loading, error } = useUserForm(() => {
-    onSave(); // Llamar a `onSave` después de un registro exitoso
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  
+  const { formData, handleChange, handleSubmit, loading, error } = useUserForm(async () => {
+    handleShowSuccess(); // Mostrar mensaje de éxito después de un registro exitoso
+    await onSave(); // Llamar a `onSave` después de un registro exitoso (esto actualizará la lista de usuarios en la página principal)
     onClose(); // Cerrar el modal después de registrar
   });
+
+  const handleShowSuccess = () => {
+    setSuccessMessage('¡Usuario registrado con éxito!');
+    setShowSuccess(true);
+    setTimeout(() => {
+      setShowSuccess(false);
+    }, 4000); // El mensaje de éxito desaparecerá después de 4 segundos
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -43,6 +56,14 @@ const UserRegisterModal = ({ onClose, onSave }) => {
           <ActionButtons onClose={onClose} loading={loading} />
         </form>
       </div>
+
+      {/* Mostrar el mensaje de éxito si está activo */}
+      {showSuccess && (
+        <SuccessMessage 
+          message={successMessage} 
+          onClose={() => setShowSuccess(false)} 
+        />
+      )}
     </div>
   );
 };

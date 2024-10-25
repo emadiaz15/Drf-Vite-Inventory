@@ -17,7 +17,6 @@ const useUserForm = (onSave, showSuccessPrompt) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Maneja los cambios en los campos del formulario
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
     setFormData((prevData) => ({
@@ -26,11 +25,9 @@ const useUserForm = (onSave, showSuccessPrompt) => {
     }));
   };
 
-  // Maneja el envío del formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Verificar que las contraseñas coincidan
     if (formData.password !== formData.confirmPassword) {
       setError('Las contraseñas no coinciden');
       return;
@@ -45,7 +42,7 @@ const useUserForm = (onSave, showSuccessPrompt) => {
 
       // Mostrar mensaje de éxito si se proporcionó la función
       if (showSuccessPrompt) {
-        showSuccessPrompt('Usuario registrado con éxito');
+        showSuccessPrompt('¡Usuario registrado con éxito!');
       }
 
       // Resetear el formulario después de un registro exitoso
@@ -65,7 +62,6 @@ const useUserForm = (onSave, showSuccessPrompt) => {
       // Llamar a la función para cerrar el modal y actualizar la lista
       onSave();
     } catch (error) {
-      // Mostrar mensajes de error detallados
       setError(error.message || 'Error al registrar el usuario');
     } finally {
       setLoading(false);
