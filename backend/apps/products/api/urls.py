@@ -17,7 +17,7 @@ urlpatterns = [
     path('types/<int:pk>/', type_detail, name='type-detail'),
 
     # Rutas de Productos
-    path('list/', product_list, name='product-list'),
+    path('products/', product_list, name='product-list'),
     path('product/<int:pk>/', product_detail, name='product-detail'),
 
     # Rutas para Código QR de productos

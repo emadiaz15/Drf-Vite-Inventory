@@ -3,7 +3,7 @@ import api from '../../../../services/api'; // Usa la instancia de Axios configu
 // Método para eliminar un producto
 export const deleteProduct = async (productId) => {
     try {
-      const response = await api.delete(`/products/${productId}/`); // El token se agrega automáticamente
+      const response = await api.delete(`/inventory/products/${productId}/`); // El token se agrega automáticamente
       return response.data; // Devuelve los datos del producto eliminado
     } catch (error) {
       console.error(`Error al eliminar el producto ${productId}:`, error.response?.data || error.message);

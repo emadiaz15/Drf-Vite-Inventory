@@ -3,7 +3,7 @@ import api from '../../../services/api'; // Asegúrate de usar tu instancia conf
 // Servicio para crear un nuevo tipo
 export const createType = async (typeData) => {
   try {
-    const response = await api.post('/products/types/', typeData);
+    const response = await api.post('/inventory/types/', typeData);
     return response.data; // Devuelve los datos del tipo creado
   } catch (error) {
     console.error('Error al crear el tipo:', error.response?.data || error.message);

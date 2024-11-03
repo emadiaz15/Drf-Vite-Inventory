@@ -4,7 +4,7 @@ import api from '../../../services/api'; // Asegúrate de que esta es tu instanc
 export const createCategory = async (categoryData) => {
   try {
     // Enviar solicitud POST para crear una nueva categoría
-    const response = await api.post('/products/categories/', categoryData);
+    const response = await api.post('/inventory/categories/', categoryData);
     return response.data; // Devuelve los datos de la categoría creada
   } catch (error) {
     console.error('Error al crear la categoría:', error.response?.data || error.message);

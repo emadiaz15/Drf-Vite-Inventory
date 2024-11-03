@@ -4,7 +4,7 @@ import api from '../../../services/api'; // Asegúrate de que esta es tu instanc
 export const listCategories = async () => {
   try {
     // Enviar solicitud GET para obtener todas las categorías
-    const response = await api.get('/products/categories/');
+    const response = await api.get('/inventory/categories/');
     return response.data; // Devuelve los datos de las categorías
   } catch (error) {
     console.error('Error al obtener la lista de categorías:', error.response?.data || error.message);

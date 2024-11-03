@@ -5,7 +5,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, Sp
 # Rutas de la API
 api_patterns = [
     path('users/', include('apps.users.api.urls')),  # Rutas de la app `users`
-    path('products/', include('apps.products.api.urls')),  # Rutas de la app `products`
+    path('inventory/', include('apps.products.api.urls')),  # Rutas de la app `products`
     path('cutting/', include('apps.cuts.api.urls')),  # Rutas de la app `cutting`
     path('', include('apps.core.urls')),  # Rutas de la app `core` (Añadido)
 ]

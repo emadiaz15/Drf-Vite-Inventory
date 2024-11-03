@@ -4,7 +4,7 @@ import api from '../../../services/api'; // Asegúrate de que esta es tu instanc
 export const updateCategory = async (categoryId, updatedData) => {
   try {
     // Enviar solicitud PUT para actualizar la categoría por ID
-    const response = await api.put(`/products/categories/${categoryId}/`, updatedData);
+    const response = await api.put(`/inventory/categories/${categoryId}/`, updatedData);
     return response.data; // Devuelve los datos actualizados de la categoría
   } catch (error) {
     console.error('Error al actualizar la categoría:', error.response?.data || error.message);
