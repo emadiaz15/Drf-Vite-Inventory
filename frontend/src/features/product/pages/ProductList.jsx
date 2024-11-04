@@ -3,13 +3,15 @@ import { listProducts } from '../services/products/listProducts';
 import Navbar from '../../../components/common/Navbar';
 import Sidebar from '../../../components/common/Sidebar';
 import Footer from '../../../components/common/Footer';
-import ProductToolbar from '../components/ProductToolbar'; // Importar ProductToolbar
+import Toolbar from '../../../components/common/Toolbar';
+import Pagination from '../../../components/ui/Pagination'; // Importar Pagination
 import ProductCreateModal from '../components/ProductCreateModal';
 import ProductEditModal from '../components/ProductEditModal';
+import Table from '../../../components/common/Table';
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]); // Productos filtrados por búsqueda
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [error, setError] = useState(null);
   const [nextPage, setNextPage] = useState(null);
   const [previousPage, setPreviousPage] = useState(null);
@@ -24,10 +26,10 @@ const ProductList = () => {
   const fetchProducts = async (url = null) => {
     try {
       const response = await listProducts(url);
-      
+
       if (response && response.results) {
         setProducts(response.results);
-        setFilteredProducts(response.results); // Inicializar productos filtrados
+        setFilteredProducts(response.results);
         setNextPage(response.next);
         setPreviousPage(response.previous);
       } else {
@@ -73,6 +75,43 @@ const ProductList = () => {
     }
   };
 
+  // Definimos los encabezados de la tabla
+  const headers = [
+    'Código',
+    'Tipo',
+    'Nombre del Producto',
+    'Categoría',
+    'Stock',
+    'Acciones',
+  ];
+
+  // Formateamos los productos para adaptarlos al componente TableRow
+  const rows = filteredProducts.map((product) => ({
+    id: product.id,
+    code: product.code,
+    type: product.type ? { value: product.type.name } : { value: 'Sin Tipo' },
+    name: product.name,
+    brand: product.brand ? { value: product.brand.name } : { value: 'Sin Marca' },
+    category: product.category ? { value: product.category.name } : { value: 'Sin Categoría' },
+    stock: product.stock ? { value: product.stock.quantity } : { value: 'No Disponible' },
+  }));
+
+  // Definimos las acciones para cada fila
+  const actions = [
+    {
+      label: 'Editar',
+      onClick: (id) => handleEditProduct(products.find((p) => p.id === id)),
+      className: 'bg-blue-500 text-white',
+      hoverClass: 'bg-blue-600',
+    },
+    {
+      label: 'Eliminar',
+      onClick: handleDeleteProduct,
+      className: 'bg-red-500 text-white',
+      hoverClass: 'bg-red-600',
+    },
+  ];
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -82,79 +121,25 @@ const ProductList = () => {
         </div>
         <div className="flex-1 mt-14 rounded-lg">
           <div className="p-2 border-gray-200 rounded-lg dark:border-gray-700">
-
-            {/* Integrar ProductToolbar */}
-            <ProductToolbar onSearch={handleSearch} onCreate={handleCreateProduct} />
+            <Toolbar onSearch={handleSearch} onCreate={handleCreateProduct} createButtonText="Nuevo Producto" />
 
             {error ? (
               <p className="text-red-500">{error}</p>
             ) : (
-              <>
-                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 rounded-lg">
-                  <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 rounded-lg">
-                    <tr>
-                      <th className="px-6 py-3">Código</th>
-                      <th className="px-6 py-3">Tipo</th>
-                      <th className="px-6 py-3">Nombre del Producto</th>
-                      <th className="px-6 py-3">Categoría</th>
-                      <th className="px-6 py-3">Stock</th>
-                      <th className="px-6 py-3">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredProducts.map((product) => (
-                      product && product.name ? (
-                        <tr key={product.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                          <td className="px-6 py-4">{product.code}</td>
-                          <td className="px-6 py-4">{product.type ? product.type.name : 'Sin Tipo'}</td>
-                          <td className="px-6 py-4">{product.name}</td>
-                          <td className="px-6 py-4">{product.brand ? product.brand.name : 'Sin Marca'}</td>
-                          <td className="px-6 py-4">{product.category ? product.category.name : 'Sin Categoría'}</td>
-                          <td className="px-6 py-4">{product.stock ? product.stock.quantity : 'No Disponible'}</td>
-                          <td className="px-6 py-4 space-x-2">
-                            <button 
-                              className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600"
-                              onClick={() => handleEditProduct(product)}
-                            >
-                              Editar
-                            </button>
-                            <button 
-                              className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600"
-                              onClick={() => handleDeleteProduct(product.id)}
-                            >
-                              Eliminar
-                            </button>
-                          </td>
-                        </tr>
-                      ) : null
-                    ))}
-                  </tbody>
-                </table>
-
-                {/* Controles de Paginación */}
-                <div className="flex justify-between mt-4">
-                  <button
-                    className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
-                    onClick={handlePreviousPage}
-                    disabled={!previousPage}
-                  >
-                    Anterior
-                  </button>
-                  <button
-                    className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
-                    onClick={handleNextPage}
-                    disabled={!nextPage}
-                  >
-                    Siguiente
-                  </button>
-                </div>
-              </>
+              <Table headers={headers} rows={rows} actions={actions} />
             )}
+
+            {/* Usamos el componente Pagination */}
+            <Pagination
+              onNext={handleNextPage}
+              onPrevious={handlePreviousPage}
+              hasNext={!!nextPage}
+              hasPrevious={!!previousPage}
+            />
           </div>
         </div>
       </div>
 
-      {/* Modales */}
       {showCreateModal && <ProductCreateModal onClose={() => setShowCreateModal(false)} />}
       {showEditModal && (
         <ProductEditModal
