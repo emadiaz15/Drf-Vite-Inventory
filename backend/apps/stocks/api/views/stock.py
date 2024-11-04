@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from apps.stocks.models import Stock
-from apps.stocks.api.serializers import StockSerializer  # Asegúrate de tener este serializer
+from apps.stocks.api.serializers import StockSerializer
 from drf_spectacular.utils import extend_schema
 
 @extend_schema(
@@ -41,7 +41,7 @@ def create_stock_view(request):
     """
     serializer = StockSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save()
+        serializer.save(user=request.user)  # Asigna el usuario que realiza la creación
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -66,7 +66,7 @@ def create_stock_view(request):
     methods=['DELETE'],
     operation_id="delete_stock",
     description="Delete a specific stock",
-    responses={200: "Stock deleted successfully", 404: "Stock not found"},
+    responses={204: "Stock deleted successfully", 404: "Stock not found"},
 )
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
@@ -84,20 +84,20 @@ def stock_detail_view(request, pk=None):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     elif request.method == 'PUT':
-        # Aquí actualizamos el stock y lo registramos en el historial
-        new_quantity = request.data.get('quantity', None)
+        new_quantity = request.data.get('quantity')
         change_reason = request.data.get('change_reason', 'Update stock')
         
-        if new_quantity is not None:
-            try:
-                # Utilizamos el método `update_stock` para modificar el stock y registrar el historial
-                stock.update_stock(new_quantity=new_quantity, reason=change_reason, user=request.user)
-                serializer = StockSerializer(stock)
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            except Exception as e:
-                return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'detail': 'Quantity field is required'}, status=status.HTTP_400_BAD_REQUEST)
+        if new_quantity is None:
+            return Response({'detail': 'Quantity field is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Usa el método `update_stock` del modelo Stock para manejar el cambio
+            stock.update_stock(new_quantity=new_quantity, reason=change_reason, user=request.user)
+            serializer = StockSerializer(stock)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
     elif request.method == 'DELETE':
         stock.delete()
-        return Response({'message': 'Stock deleted successfully'}, status=status.HTTP_200_OK)
+        return Response({'message': 'Stock deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
