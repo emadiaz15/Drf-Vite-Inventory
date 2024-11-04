@@ -1,10 +1,11 @@
+// src/features/product/components/ProductList.jsx
 import React, { useState, useEffect } from 'react';
 import { listProducts } from '../services/products/listProducts';
 import Navbar from '../../../components/common/Navbar';
 import Sidebar from '../../../components/common/Sidebar';
 import Footer from '../../../components/common/Footer';
 import Toolbar from '../../../components/common/Toolbar';
-import Pagination from '../../../components/ui/Pagination'; // Importar Pagination
+import Pagination from '../../../components/ui/Pagination';
 import ProductCreateModal from '../components/ProductCreateModal';
 import ProductEditModal from '../components/ProductEditModal';
 import Table from '../../../components/common/Table';
@@ -25,9 +26,18 @@ const ProductList = () => {
 
   const fetchProducts = async (url = null) => {
     try {
-      const response = await listProducts(url);
-
-      if (response && response.results) {
+      const response = await listProducts(url || '/inventory/products/');
+      console.log('Response from API:', response);
+  
+      // Verifica si la respuesta es un array (sin paginación)
+      if (Array.isArray(response)) {
+        setProducts(response);
+        setFilteredProducts(response);
+        setNextPage(null); // Sin paginación, no hay "next"
+        setPreviousPage(null); // Sin paginación, no hay "previous"
+      } 
+      // Si tiene "results", "next", y "previous", entonces está paginado
+      else if (response && response.results) {
         setProducts(response.results);
         setFilteredProducts(response.results);
         setNextPage(response.next);
@@ -36,6 +46,7 @@ const ProductList = () => {
         setProducts([]);
         setFilteredProducts([]);
         console.error('Respuesta inesperada al obtener productos:', response);
+        setError('Respuesta inesperada al obtener productos');
       }
     } catch (error) {
       console.error('Error al obtener los productos:', error);
@@ -75,7 +86,6 @@ const ProductList = () => {
     }
   };
 
-  // Definimos los encabezados de la tabla
   const headers = [
     'Código',
     'Tipo',
@@ -85,7 +95,6 @@ const ProductList = () => {
     'Acciones',
   ];
 
-  // Formateamos los productos para adaptarlos al componente TableRow
   const rows = filteredProducts.map((product) => ({
     id: product.id,
     code: product.code,
@@ -96,7 +105,6 @@ const ProductList = () => {
     stock: product.stock ? { value: product.stock.quantity } : { value: 'No Disponible' },
   }));
 
-  // Definimos las acciones para cada fila
   const actions = [
     {
       label: 'Editar',
@@ -129,7 +137,6 @@ const ProductList = () => {
               <Table headers={headers} rows={rows} actions={actions} />
             )}
 
-            {/* Usamos el componente Pagination */}
             <Pagination
               onNext={handleNextPage}
               onPrevious={handlePreviousPage}
