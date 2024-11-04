@@ -16,20 +16,53 @@ class TypeSerializer(serializers.ModelSerializer):
 
 # Serializer para Product con relaciones
 class ProductSerializer(serializers.ModelSerializer):
-    # Serializamos las relaciones con Category y Type
-    category = CategorySerializer(read_only=True)  # Si deseas permitir escritura, debes usar PrimaryKeyRelatedField
+    category = CategorySerializer(read_only=True)
     type = TypeSerializer(read_only=True)
-    user = serializers.StringRelatedField(read_only=True)  # Si solo quieres mostrar el username del usuario
-    comments = CommentSerializer(many=True, read_only=True)  # Incluir los comentarios asociados al producto
+    user = serializers.StringRelatedField(read_only=True)
+    comments = CommentSerializer(many=True, read_only=True)
+
+    # Extraer información de metadata si el producto es de tipo "Cables"
+    brand = serializers.SerializerMethodField()
+    number_coil = serializers.SerializerMethodField()
+    initial_length = serializers.SerializerMethodField()
+    total_weight = serializers.SerializerMethodField()
+    coil_weight = serializers.SerializerMethodField()
+    technical_sheet_photo = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
-        fields = '__all__'  # Incluimos todos los campos, incluidos los comentarios
+        fields = '__all__'
 
-    # Si deseas permitir crear o actualizar productos usando solo el ID de las relaciones
-    def create(self, validated_data):
-        # Puedes manejar las relaciones a través de sus IDs aquí, si es necesario
-        return super().create(validated_data)
+    def get_brand(self, obj):
+        return obj.metadata.get("brand") if obj.metadata else None
 
-    def update(self, instance, validated_data):
-        return super().update(instance, validated_data)
+    def get_number_coil(self, obj):
+        return obj.metadata.get("number_coil") if obj.metadata else None
+
+    def get_initial_length(self, obj):
+        return obj.metadata.get("initial_length") if obj.metadata else None
+
+    def get_total_weight(self, obj):
+        return obj.metadata.get("total_weight") if obj.metadata else None
+
+    def get_coil_weight(self, obj):
+        return obj.metadata.get("coil_weight") if obj.metadata else None
+
+    def get_technical_sheet_photo(self, obj):
+        # Asume que technical_sheet_photo es una URL o un Base64; ajustar si es necesario
+        return obj.metadata.get("technical_sheet_photo") if obj.metadata else None
+
+    def validate(self, data):
+        """
+        Valida el campo `metadata` si la categoría es "Cables".
+        """
+        category = data.get('category')
+        if category and category.name == "Cables":
+            metadata = data.get('metadata')
+            required_fields = ['brand', 'number_coil', 'initial_length', 'total_weight', 'coil_weight', 'technical_sheet_photo']
+            if not metadata:
+                raise serializers.ValidationError("El campo 'metadata' es requerido para productos de tipo 'Cables'.")
+            missing_fields = [field for field in required_fields if field not in metadata]
+            if missing_fields:
+                raise serializers.ValidationError(f"Faltan los siguientes campos en 'metadata': {', '.join(missing_fields)}")
+        return data
