@@ -96,7 +96,6 @@ const ProductList = () => {
                       <th className="px-6 py-3">Código</th>
                       <th className="px-6 py-3">Tipo</th>
                       <th className="px-6 py-3">Nombre del Producto</th>
-                      <th className="px-6 py-3">Marca</th>
                       <th className="px-6 py-3">Categoría</th>
                       <th className="px-6 py-3">Stock</th>
                       <th className="px-6 py-3">Acciones</th>
