@@ -34,21 +34,14 @@ const ProductList = () => {
   const fetchProducts = async (url = null) => {
     try {
       const response = await listProducts(url || '/inventory/products/');
-      if (Array.isArray(response)) {
-        setProducts(response);
-        setFilteredProducts(response);
-        setNextPage(null);
-        setPreviousPage(null);
-      } else if (response && response.results) {
-        setProducts(response.results);
-        setFilteredProducts(response.results);
-        setNextPage(response.next);
-        setPreviousPage(response.previous);
-      } else {
-        setProducts([]);
-        setFilteredProducts([]);
-        setError('Respuesta inesperada al obtener productos');
-      }
+      const activeProducts = Array.isArray(response)
+        ? response.filter((product) => product.is_active)
+        : response.results?.filter((product) => product.is_active) || [];
+
+      setProducts(activeProducts);
+      setFilteredProducts(activeProducts);
+      setNextPage(response.next || null);
+      setPreviousPage(response.previous || null);
     } catch (error) {
       setError('Error al obtener los productos.');
     }
@@ -72,7 +65,7 @@ const ProductList = () => {
 
   const handleDeleteProduct = async (productId) => {
     if (!currentUser.isAdmin) {
-      alert("No tienes permisos para eliminar productos."); // Advertencia para usuarios no admin
+      alert("No tienes permisos para eliminar productos.");
       return;
     }
 
@@ -81,6 +74,8 @@ const ProductList = () => {
 
     try {
       await deleteProduct(productId);
+
+      // Filtra el producto eliminado de la lista en el frontend
       setProducts((prevProducts) => prevProducts.filter((product) => product.id !== productId));
       setFilteredProducts((prevProducts) => prevProducts.filter((product) => product.id !== productId));
     } catch (error) {

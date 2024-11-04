@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from ..models import Category, Type, Product
-from apps.comments.api.serializers import CommentSerializer  # Importamos el serializer de comentarios
+from apps.comments.api.serializers import CommentSerializer
 
 # Serializer para Category
 class CategorySerializer(serializers.ModelSerializer):
@@ -32,7 +32,9 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = '__all__'
-        read_only_fields = ['is_active']  # Impedir cambios directos en `is_active` a través del serializer
+        extra_kwargs = {
+            'is_active': {'required': False}  # Permitir que `is_active` sea opcional en actualizaciones
+        }
 
     def get_brand(self, obj):
         return obj.metadata.get("brand") if obj.metadata else None
@@ -56,10 +58,14 @@ class ProductSerializer(serializers.ModelSerializer):
         category = data.get('category')
         if category and category.name == "Cables":
             metadata = data.get('metadata')
-            required_fields = ['brand', 'number_coil', 'initial_length', 'total_weight', 'coil_weight', 'technical_sheet_photo']
+            required_fields = [
+                'brand', 'number_coil', 'initial_length', 'total_weight', 'coil_weight', 'technical_sheet_photo'
+            ]
             if not metadata:
                 raise serializers.ValidationError("El campo 'metadata' es requerido para productos de tipo 'Cables'.")
             missing_fields = [field for field in required_fields if field not in metadata]
             if missing_fields:
-                raise serializers.ValidationError(f"Faltan los siguientes campos en 'metadata': {', '.join(missing_fields)}")
+                raise serializers.ValidationError(
+                    f"Faltan los siguientes campos en 'metadata': {', '.join(missing_fields)}"
+                )
         return data

@@ -1,17 +1,17 @@
-import api from '../../../../services/api'; // Usa la instancia de Axios configurada
+import api from '../../../../services/api';
 
-// Método para eliminar un producto
+// Método para cambiar el estado de `is_active` a false (eliminación lógica)
 export const deleteProduct = async (productId) => {
-    try {
-      const response = await api.delete(`/inventory/products/${productId}/`); // El token se agrega automáticamente
-      return response.data; // Devuelve los datos del producto eliminado
-    } catch (error) {
-      console.error(`Error al eliminar el producto ${productId}:`, error.response?.data || error.message);
-      throw error; // Lanzamos el error para manejarlo en el componente
-    }
-  };
+  try {
+    // Actualiza solo `is_active` a `false` en lugar de un DELETE completo
+    const response = await api.put(`/inventory/products/${productId}/`, { is_active: false });
+    return response.data;
+  } catch (error) {
+    console.error(`Error al desactivar el producto ${productId}:`, error.response?.data || error.message);
+    throw error;
+  }
+};
 
-// Exportamos todo el servicio para facilitar la importación en otros archivos
 export default {
-    deleteProduct,
-  };
+  deleteProduct,
+};

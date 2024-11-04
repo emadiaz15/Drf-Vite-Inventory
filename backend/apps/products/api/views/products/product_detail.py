@@ -18,15 +18,15 @@ from django.core.files.base import ContentFile
 @extend_schema(
     methods=['PUT'],
     operation_id="update_product",
-    description="Update details of a specific product and optionally update stock",
+    description="Update details of a specific product and optionally update stock or metadata",
     request=ProductSerializer,
     responses={200: ProductSerializer, 400: "Bad Request - Invalid data"},
 )
 @extend_schema(
     methods=['DELETE'],
     operation_id="delete_product",
-    description="Delete a specific product and its associated stock",
-    responses={204: "Product deleted successfully", 404: "Product not found"},
+    description="Soft delete a specific product by setting its is_active flag to False",
+    responses={204: "Product marked as inactive", 404: "Product not found"},
 )
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
@@ -41,7 +41,8 @@ def product_detail(request, pk):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     elif request.method == 'PUT':
-        serializer = ProductSerializer(product, data=request.data)
+        # Permitir actualizaciones parciales
+        serializer = ProductSerializer(product, data=request.data, partial=True)
         if serializer.is_valid():
             product = serializer.save()
 
@@ -68,6 +69,7 @@ def product_detail(request, pk):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     elif request.method == 'DELETE':
-        Stock.objects.filter(product=product).delete()
-        product.delete()
-        return Response({"detail": "Producto y su stock eliminado correctamente."}, status=status.HTTP_204_NO_CONTENT)
+        # Cambio del estado de `is_active` a False en lugar de eliminar el producto
+        product.is_active = False
+        product.save()
+        return Response({"detail": "Producto marcado como inactivo correctamente."}, status=status.HTTP_204_NO_CONTENT)
