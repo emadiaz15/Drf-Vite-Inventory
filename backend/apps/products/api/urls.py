@@ -18,9 +18,7 @@ urlpatterns = [
 
     # Rutas de Productos
     path('products/', product_list, name='product-list'),
-    path('product/<int:pk>/', product_detail, name='product-detail'),
-
-    # Rutas para Código QR de productos
+    path('products/<int:pk>/', product_detail, name='product-detail'),  # Corrección en el nombre de la ruta a plural
 ]
 
 # Añadir soporte para sufijos de formatos (e.g., /products.json)

@@ -11,63 +11,66 @@ from django.core.files.base import ContentFile
 
 @extend_schema(
     methods=['GET'],
-    operation_id="retrieve_product",
-    description="Retrieve details of a specific product, including its stock",
-    responses={200: ProductSerializer, 404: "Product not found"},
+    operation_id="list_products",
+    description="Retrieve a list of all products or filter by category or type",
+    parameters=[
+        {'name': 'category', 'in': 'query', 'description': 'Filter products by category ID', 'required': False, 'schema': {'type': 'integer'}},
+        {'name': 'type', 'in': 'query', 'description': 'Filter products by type ID', 'required': False, 'schema': {'type': 'integer'}}
+    ],
+    responses={200: ProductSerializer(many=True)},
 )
 @extend_schema(
-    methods=['PUT'],
-    operation_id="update_product",
-    description="Update details of a specific product and optionally update stock",
+    methods=['POST'],
+    operation_id="create_product",
+    description="Create a new product and optionally set initial stock",
     request=ProductSerializer,
-    responses={200: ProductSerializer, 400: "Bad Request - Invalid data"},
+    responses={201: ProductSerializer, 400: "Bad Request - Invalid data"},
 )
-@extend_schema(
-    methods=['DELETE'],
-    operation_id="delete_product",
-    description="Delete a specific product and its associated stock",
-    responses={204: "Product deleted successfully", 404: "Product not found"},
-)
-@api_view(['GET', 'PUT', 'DELETE'])
+@api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
-def product_detail(request, pk):
-    try:
-        product = Product.objects.get(pk=pk)
-    except Product.DoesNotExist:
-        return Response({"detail": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
-    
+def product_list(request):
+    """
+    Endpoint para listar productos (GET) y crear un nuevo producto (POST).
+    """
     if request.method == 'GET':
-        serializer = ProductSerializer(product)
+        category_id = request.query_params.get('category')
+        type_id = request.query_params.get('type')
+
+        # Filtrar productos según la categoría o el tipo
+        products = Product.objects.all()
+        if category_id:
+            products = products.filter(category_id=category_id)
+        if type_id:
+            products = products.filter(type_id=type_id)
+        
+        # Serializar y devolver la lista de productos
+        serializer = ProductSerializer(products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    elif request.method == 'PUT':
-        serializer = ProductSerializer(product, data=request.data)
+    elif request.method == 'POST':
+        serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
-            product = serializer.save()
+            product = serializer.save(user=request.user)
             
-            # Manejo de la imagen de ficha técnica en caso de actualización
+            # Procesar la imagen de ficha técnica si está en `metadata` y en formato Base64
             metadata = request.data.get('metadata', {})
             if 'technical_sheet_photo' in metadata:
                 try:
                     format, imgstr = metadata['technical_sheet_photo'].split(';base64,')
-                    ext = format.split('/')[-1]
+                    ext = format.split('/')[-1]  # Obtener la extensión de archivo
+                    # Guardar la imagen decodificada en el campo `image`
                     product.image = ContentFile(base64.b64decode(imgstr), name=f"{product.name}_tech_sheet.{ext}")
                 except Exception as e:
                     return Response({"detail": f"Error decoding technical sheet photo: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
             
+            # Guardar cambios en el producto después de procesar la imagen
             product.save()
 
-            # Actualizar el stock si se proporciona
+            # Crear stock inicial si se especifica en la solicitud
             if 'stock_quantity' in request.data:
-                stock, _ = Stock.objects.get_or_create(product=product, defaults={'user': request.user})
-                stock.quantity = request.data['stock_quantity']
-                stock.save()
-
-            return Response(serializer.data, status=status.HTTP_200_OK)
+                Stock.objects.create(product=product, quantity=request.data['stock_quantity'], user=request.user)
+            
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         
+        # Responder con errores de validación en caso de datos inválidos
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    elif request.method == 'DELETE':
-        Stock.objects.filter(product=product).delete()
-        product.delete()
-        return Response({"detail": "Product and associated stock deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
