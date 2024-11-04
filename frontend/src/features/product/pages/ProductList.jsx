@@ -1,6 +1,7 @@
 // src/features/product/components/ProductList.jsx
 import React, { useState, useEffect } from 'react';
 import { listProducts } from '../services/products/listProducts';
+import { deleteProduct } from '../services/products/deleteProduct';
 import Navbar from '../../../components/common/Navbar';
 import Sidebar from '../../../components/common/Sidebar';
 import Footer from '../../../components/common/Footer';
@@ -9,6 +10,12 @@ import Pagination from '../../../components/ui/Pagination';
 import ProductCreateModal from '../components/ProductCreateModal';
 import ProductEditModal from '../components/ProductEditModal';
 import Table from '../../../components/common/Table';
+import ButtonsActions from '../../../components/ui/ButtonsActions';
+
+// Simulación de usuario actual
+const currentUser = {
+  isAdmin: true, // Cambia esto a `false` para simular un usuario no administrador
+};
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
@@ -27,17 +34,12 @@ const ProductList = () => {
   const fetchProducts = async (url = null) => {
     try {
       const response = await listProducts(url || '/inventory/products/');
-      console.log('Response from API:', response);
-  
-      // Verifica si la respuesta es un array (sin paginación)
       if (Array.isArray(response)) {
         setProducts(response);
         setFilteredProducts(response);
-        setNextPage(null); // Sin paginación, no hay "next"
-        setPreviousPage(null); // Sin paginación, no hay "previous"
-      } 
-      // Si tiene "results", "next", y "previous", entonces está paginado
-      else if (response && response.results) {
+        setNextPage(null);
+        setPreviousPage(null);
+      } else if (response && response.results) {
         setProducts(response.results);
         setFilteredProducts(response.results);
         setNextPage(response.next);
@@ -45,11 +47,9 @@ const ProductList = () => {
       } else {
         setProducts([]);
         setFilteredProducts([]);
-        console.error('Respuesta inesperada al obtener productos:', response);
         setError('Respuesta inesperada al obtener productos');
       }
     } catch (error) {
-      console.error('Error al obtener los productos:', error);
       setError('Error al obtener los productos.');
     }
   };
@@ -71,7 +71,22 @@ const ProductList = () => {
   };
 
   const handleDeleteProduct = async (productId) => {
-    console.log(`Eliminar producto con ID ${productId}`);
+    if (!currentUser.isAdmin) {
+      alert("No tienes permisos para eliminar productos."); // Advertencia para usuarios no admin
+      return;
+    }
+
+    const confirmed = window.confirm("¿Estás seguro de que deseas eliminar este producto?");
+    if (!confirmed) return;
+
+    try {
+      await deleteProduct(productId);
+      setProducts((prevProducts) => prevProducts.filter((product) => product.id !== productId));
+      setFilteredProducts((prevProducts) => prevProducts.filter((product) => product.id !== productId));
+    } catch (error) {
+      console.error(`Error al eliminar el producto con ID ${productId}`, error);
+      setError('No se pudo eliminar el producto.');
+    }
   };
 
   const handleNextPage = () => {
@@ -96,29 +111,18 @@ const ProductList = () => {
   ];
 
   const rows = filteredProducts.map((product) => ({
-    id: product.id,
     code: product.code,
-    type: product.type ? { value: product.type.name } : { value: 'Sin Tipo' },
+    type: product.type ? product.type.name : 'Sin Tipo',
     name: product.name,
-    brand: product.brand ? { value: product.brand.name } : { value: 'Sin Marca' },
-    category: product.category ? { value: product.category.name } : { value: 'Sin Categoría' },
-    stock: product.stock ? { value: product.stock.quantity } : { value: 'No Disponible' },
+    category: product.category ? product.category.name : 'Sin Categoría',
+    stock: product.stock ? product.stock.quantity : 'No Disponible',
+    actions: (
+      <ButtonsActions
+        onEdit={() => handleEditProduct(product)}
+        onDelete={() => handleDeleteProduct(product.id)}
+      />
+    ),
   }));
-
-  const actions = [
-    {
-      label: 'Editar',
-      onClick: (id) => handleEditProduct(products.find((p) => p.id === id)),
-      className: 'bg-blue-500 text-white',
-      hoverClass: 'bg-blue-600',
-    },
-    {
-      label: 'Eliminar',
-      onClick: handleDeleteProduct,
-      className: 'bg-red-500 text-white',
-      hoverClass: 'bg-red-600',
-    },
-  ];
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -134,25 +138,40 @@ const ProductList = () => {
             {error ? (
               <p className="text-red-500">{error}</p>
             ) : (
-              <Table headers={headers} rows={rows} actions={actions} />
+              <Table headers={headers} rows={rows} />
             )}
 
-            <Pagination
-              onNext={handleNextPage}
-              onPrevious={handlePreviousPage}
-              hasNext={!!nextPage}
-              hasPrevious={!!previousPage}
-            />
+            {nextPage || previousPage ? (
+              <Pagination
+                onNext={handleNextPage}
+                onPrevious={handlePreviousPage}
+                hasNext={!!nextPage}
+                hasPrevious={!!previousPage}
+              />
+            ) : null}
           </div>
         </div>
       </div>
 
       {showCreateModal && <ProductCreateModal onClose={() => setShowCreateModal(false)} />}
-      {showEditModal && (
+      
+      {showEditModal && selectedProduct && (
         <ProductEditModal
           product={selectedProduct}
           onClose={() => setShowEditModal(false)}
-          onSave={fetchProducts}
+          onSave={(updatedProduct) => {
+            setProducts((prevProducts) =>
+              prevProducts.map((product) =>
+                product.id === updatedProduct.id ? updatedProduct : product
+              )
+            );
+            setFilteredProducts((prevProducts) =>
+              prevProducts.map((product) =>
+                product.id === updatedProduct.id ? updatedProduct : product
+              )
+            );
+            setShowEditModal(false);
+          }}
         />
       )}
 
