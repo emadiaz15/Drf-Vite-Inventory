@@ -6,6 +6,8 @@ from ....models import Product
 from apps.stocks.models import Stock
 from ...serializers import ProductSerializer
 from drf_spectacular.utils import extend_schema
+import base64
+from django.core.files.base import ContentFile
 
 @extend_schema(
     methods=['GET'],
@@ -42,11 +44,27 @@ def product_detail(request, pk):
         serializer = ProductSerializer(product, data=request.data)
         if serializer.is_valid():
             product = serializer.save()
+
+            # Manejo de la imagen de ficha técnica en `metadata` si está en Base64
+            metadata = request.data.get('metadata', {})
+            if 'technical_sheet_photo' in metadata:
+                try:
+                    format, imgstr = metadata['technical_sheet_photo'].split(';base64,')
+                    ext = format.split('/')[-1]
+                    product.image = ContentFile(base64.b64decode(imgstr), name=f"{product.name}_tech_sheet.{ext}")
+                except Exception as e:
+                    return Response({"detail": f"Error decoding technical sheet photo: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            product.save()
+
+            # Actualización de stock si se proporciona
             if 'stock_quantity' in request.data:
                 stock, _ = Stock.objects.get_or_create(product=product, defaults={'user': request.user})
                 stock.quantity = request.data['stock_quantity']
                 stock.save()
-            return Response(serializer.data)
+                
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     elif request.method == 'DELETE':

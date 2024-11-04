@@ -12,7 +12,8 @@ api_patterns = [
 
 # Rutas para la documentación de la API con drf-spectacular
 schema_patterns = [
-    path('schema/', SpectacularAPIView.as_view(), name='schema'),  # Esquema de la API
+    path('schema/', SpectacularAPIView.as_view(), name='schema'),  # Esquema de la API en formato OpenAPI
+    path('schema/download/', SpectacularAPIView.as_view(), name='schema-download'),  # Descarga directa del esquema
     path('schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),  # Documentación en Swagger UI
     path('schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),  # Documentación en ReDoc
 ]
