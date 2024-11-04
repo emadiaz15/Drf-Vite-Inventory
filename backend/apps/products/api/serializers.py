@@ -32,6 +32,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = '__all__'
+        read_only_fields = ['is_active']  # Impedir cambios directos en `is_active` a través del serializer
 
     def get_brand(self, obj):
         return obj.metadata.get("brand") if obj.metadata else None
@@ -49,13 +50,9 @@ class ProductSerializer(serializers.ModelSerializer):
         return obj.metadata.get("coil_weight") if obj.metadata else None
 
     def get_technical_sheet_photo(self, obj):
-        # Asume que technical_sheet_photo es una URL o un Base64; ajustar si es necesario
         return obj.metadata.get("technical_sheet_photo") if obj.metadata else None
 
     def validate(self, data):
-        """
-        Valida el campo `metadata` si la categoría es "Cables".
-        """
         category = data.get('category')
         if category and category.name == "Cables":
             metadata = data.get('metadata')
