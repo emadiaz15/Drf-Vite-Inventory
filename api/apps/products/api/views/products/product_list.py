@@ -25,13 +25,10 @@ from django.core.files.base import ContentFile
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def product_list(request):
-    """
-    Endpoint para listar productos (GET) y crear un nuevo producto (POST).
-    """
     if request.method == 'GET':
         category_id = request.query_params.get('category')
         type_id = request.query_params.get('type')
-        is_active = request.query_params.get('is_active', 'true').lower() == 'true'  # Filtra productos activos por defecto
+        is_active = request.query_params.get('is_active', 'true').lower() == 'true'
 
         # Filtrar productos según la categoría, el tipo y el estado
         products = Product.objects.filter(is_active=is_active)
@@ -52,7 +49,7 @@ def product_list(request):
         serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
             product = serializer.save(user=request.user)
-            
+
             # Manejo de imagen en metadata si está en formato Base64
             metadata = request.data.get('metadata', {})
             if 'technical_sheet_photo' in metadata:

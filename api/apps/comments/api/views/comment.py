@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from apps.comments.models import Comment
 from apps.comments.api.serializers import CommentSerializer
 from drf_spectacular.utils import extend_schema
+from django.utils.timezone import now
 
 @extend_schema(
     methods=['GET'],
@@ -39,6 +40,7 @@ def comment_list_create_view(request):
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @extend_schema(
     methods=['GET'],
@@ -78,6 +80,7 @@ def comment_detail_view(request, pk):
         return Response(serializer.data)
 
     elif request.method in ['PUT', 'PATCH']:
+        # Permitir actualizaciones parciales con `partial=True`
         serializer = CommentSerializer(comment, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -85,5 +88,6 @@ def comment_detail_view(request, pk):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     elif request.method == 'DELETE':
+        # Soft delete del comentario (asegúrate de que el método en el modelo maneje soft=True)
         comment.delete(soft=True)
         return Response(status=status.HTTP_204_NO_CONTENT)

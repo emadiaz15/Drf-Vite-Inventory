@@ -41,12 +41,11 @@ def product_detail(request, pk):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     elif request.method == 'PUT':
-        # Permitir actualizaciones parciales
         serializer = ProductSerializer(product, data=request.data, partial=True)
         if serializer.is_valid():
             product = serializer.save()
 
-            # Manejo de la imagen de ficha técnica en `metadata` si está en Base64
+            # Procesar la imagen de ficha técnica si está en `metadata` y en formato Base64
             metadata = request.data.get('metadata', {})
             if 'technical_sheet_photo' in metadata:
                 try:
@@ -56,12 +55,16 @@ def product_detail(request, pk):
                 except Exception as e:
                     return Response({"detail": f"Error decoding technical sheet photo: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
             
+            # Actualización de valores en `metadata` si se proporcionan
+            for key, value in metadata.items():
+                product.metadata[key] = value
             product.save()
 
             # Actualización de stock si se proporciona
-            if 'stock_quantity' in request.data:
-                stock, _ = Stock.objects.get_or_create(product=product, defaults={'user': request.user})
-                stock.quantity = request.data['stock_quantity']
+            stock_quantity = request.data.get('stock_quantity')
+            if stock_quantity is not None:
+                stock, _ = Stock.objects.get_or_create(product=product, defaults={'user': request.user, 'quantity': stock_quantity})
+                stock.quantity = stock_quantity
                 stock.save()
                 
             return Response(serializer.data, status=status.HTTP_200_OK)

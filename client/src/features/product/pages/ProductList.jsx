@@ -103,13 +103,13 @@ const ProductList = () => {
     'Categoría',
     'Stock',
     'Acciones',
-  ];
+];
 
-  const rows = filteredProducts.map((product) => ({
+const rows = filteredProducts.map((product) => ({
     code: product.code,
-    type: product.type ? product.type.name : 'Sin Tipo',
+    type: product.type ? product.type.name : 'Sin Tipo',  // Asegúrate de acceder a product.type.name
     name: product.name,
-    category: product.category ? product.category.name : 'Sin Categoría',
+    category: product.category ? product.category.name : 'Sin Categoría',  // Asegúrate de acceder a product.category.name
     stock: product.stock ? product.stock.quantity : 'No Disponible',
     actions: (
       <ButtonsActions
@@ -117,7 +117,7 @@ const ProductList = () => {
         onDelete={() => handleDeleteProduct(product.id)}
       />
     ),
-  }));
+}));
 
   return (
     <div className="flex flex-col min-h-screen">
