@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import PasswordResetModal from '../edit/PasswordResetModal'; // Importa el nuevo modal
+import Modal from '../../../../components/ui/Modal';
+import FormInput from '../../../../components/forms/FormInput';
+import FormCheckbox from '../../../../components/forms/FormCheckbox'; // Importamos el componente reutilizable de checkbox
+import SuccessMessage from '../../../../components/ui/SuccessMessage';
+import PasswordResetModal from './PasswordResetModal';
 
-const UserEditModal = ({ user, onClose, onSave }) => {
+const UserEditModal = ({ user, isOpen, onClose, onSave, onPasswordReset }) => {
   const [formData, setFormData] = useState({
     username: user.username,
     name: user.name,
@@ -36,163 +40,146 @@ const UserEditModal = ({ user, onClose, onSave }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    const updatedUserData = { ...formData };
-
-    // Si no se ingresó una nueva contraseña, eliminar el campo de los datos enviados
-    if (!updatedUserData.password) {
-      delete updatedUserData.password;
-      delete updatedUserData.confirmPassword;
-    }
+    if (!validateForm()) return;
 
     try {
-      await onSave(user.id, updatedUserData); // Guardar cambios
+      await onSave(user.id, formData);
+      setSuccessMessage('Usuario actualizado con éxito');
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
-      // Mostrar mensajes de error si hay problemas al guardar el usuario
       setError(error.message || 'Error al actualizar el usuario');
     }
   };
 
   const handleRestorePassword = () => {
-    setShowPasswordModal(true); // Abre el modal para cambiar la contraseña
+    setShowPasswordModal(true);
+  };
+
+  const handleSaveNewPassword = async (userId, newPasswordData) => {
+    try {
+      await onPasswordReset(userId, newPasswordData);
+      setSuccessMessage('Contraseña cambiada exitosamente');
+      setShowPasswordModal(false);
+      setTimeout(() => setSuccessMessage(''), 4000);
+    } catch (error) {
+      setError('Error al cambiar la contraseña');
+    }
   };
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div className="bg-white p-6 rounded shadow-md w-1/2">
-          <h2 className="text-2xl mb-4">Editar Usuario</h2>
+      <Modal isOpen={isOpen} onClose={onClose} title="Editar Usuario">
+        <form onSubmit={handleSubmit}>
           {error && <p className="text-red-500 mb-4">{error}</p>}
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Nombre de usuario</label>
-              <input
-                type="text"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Nombre</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Apellido</label>
-              <input
-                type="text"
-                name="last_name"
-                value={formData.last_name}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Email</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">DNI</label>
-              <input
-                type="text"
-                name="dni"
-                value={formData.dni}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-            <div className="flex items-center mb-4">
-              <input
-                type="checkbox"
-                name="is_active"
-                checked={formData.is_active}
-                onChange={handleChange}
-                className="mr-2"
-              />
-              <label className="text-sm font-medium text-gray-700">Activo</label>
-            </div>
-            <div className="flex items-center mb-4">
-              <input
-                type="checkbox"
-                name="is_staff"
-                checked={formData.is_staff}
-                onChange={handleChange}
-                className="mr-2"
-              />
-              <label className="text-sm font-medium text-gray-700">Administrador</label>
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Nueva Contraseña</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Repite Nueva Contraseña</label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-            <div className="flex justify-end space-x-2">
-              <button type="button" onClick={onClose} className="bg-gray-500 text-white py-2 px-4 rounded">
-                Cancelar
-              </button>
-              <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded">
-                Guardar
-              </button>
-              <button
-                type="button"
-                onClick={handleRestorePassword}
-                className="bg-yellow-500 text-white py-2 px-4 rounded hover:bg-yellow-600"
-              >
-                Restaurar Contraseña
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
 
-      {/* Modal para cambiar la contraseña */}
+          {/* Campos de entrada del formulario */}
+          <FormInput
+            label="Nombre de usuario"
+            type="text"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+          />
+          <FormInput
+            label="Nombre"
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+          />
+          <FormInput
+            label="Apellido"
+            type="text"
+            name="last_name"
+            value={formData.last_name}
+            onChange={handleChange}
+          />
+          <FormInput
+            label="Email"
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+          />
+          <FormInput
+            label="DNI"
+            type="text"
+            name="dni"
+            value={formData.dni}
+            onChange={handleChange}
+          />
+
+          {/* Checkbox para estado activo */}
+          <FormCheckbox
+            label="Activo"
+            name="is_active"
+            checked={formData.is_active}
+            onChange={handleChange}
+          />
+
+          {/* Checkbox para rol de administrador */}
+          <FormCheckbox
+            label="Administrador"
+            name="is_staff"
+            checked={formData.is_staff}
+            onChange={handleChange}
+          />
+
+          {/* Campos para cambio de contraseña */}
+          <FormInput
+            label="Nueva Contraseña"
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+          />
+          <FormInput
+            label="Confirmar Nueva Contraseña"
+            type="password"
+            name="confirmPassword"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+          />
+
+          {/* Botones de acción */}
+          <div className="flex justify-end space-x-2 mt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="bg-gray-500 text-white py-2 px-4 rounded"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="bg-blue-500 text-white py-2 px-4 rounded"
+            >
+              Guardar
+            </button>
+            <button
+              type="button"
+              onClick={handleRestorePassword}
+              className="bg-yellow-500 text-white py-2 px-4 rounded hover:bg-yellow-600"
+            >
+              Restaurar Contraseña
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Mensaje de éxito */}
+      <SuccessMessage
+        message={successMessage}
+        onClose={() => setSuccessMessage('')}
+      />
+
+      {/* Modal para restablecimiento de contraseña */}
       {showPasswordModal && (
         <PasswordResetModal
           userId={user.id}
           onClose={() => setShowPasswordModal(false)}
-          onSave={(newPassword) => handleSaveNewPassword(user.id, newPassword)}
+          onSave={handleSaveNewPassword}
         />
-      )}
-
-      {/* Mensaje de éxito */}
-      {successMessage && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-green-500 text-white p-4 rounded">
-            {successMessage}
-          </div>
-        </div>
       )}
     </>
   );

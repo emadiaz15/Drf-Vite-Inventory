@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import useUserForm from '../../hooks/useUserForm';
-import FormInput from '../main/FormInput';
-import FormCheckbox from '../main/FormCheckbox';
+import FormInput from '../../../../components/ui/form/FormInput';
+import FormCheckbox from '../../../../components/ui/form/FormCheckbox';
 import ActionButtons from './ActionButtons';
 import SuccessMessage from '../../../../components/common/SuccessMessage'; // Importa el componente de mensaje de éxito
 

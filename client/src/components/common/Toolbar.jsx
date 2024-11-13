@@ -1,15 +1,14 @@
 // src/components/common/Toolbar.jsx
 import React from 'react';
+import ActionButtonWithModal from '../ui/ActionButtonWithModal';
 
-const Toolbar = ({ onSearch, onCreate, createButtonText = 'Nuevo' }) => {
+const Toolbar = ({ onSearch, buttonText = 'Nuevo', children, onSave }) => {
   return (
     <div className="flex justify-between items-center mb-4">
-      <button
-        onClick={onCreate}
-        className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-      >
-        {createButtonText}
-      </button>
+      <ActionButtonWithModal buttonText={buttonText} onSave={onSave}>
+        {children}
+      </ActionButtonWithModal>
+
       <div className="relative">
         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
           <svg
